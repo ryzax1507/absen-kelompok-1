@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Absensi Online</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .attendance-card {
+            transition: all 0.3s ease;
+            transform: translateY(0);
+        }
+
+        .attendance-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .status-btn {
+            transition: all 0.2s ease;
+        }
+
+        .status-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .floating-animation {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { 
+                transform: translateY(0px); 
+            }
+            50% { 
+                transform: translateY(-10px); 
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                opacity: 1; 
+            }
+            50% { 
+                opacity: 0.7; 
+            }
+        }
+
+        .success-message {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { 
+                transform: translateY(-100px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+        }
+
+        .data-record-card {
+            transition: all 0.3s ease;
+        }
+
+        .data-record-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+        }
+
+        .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .floating-animation {
+                animation: none;
+            }
+            
+            .attendance-card:hover {
+                transform: none;
+            }
+        }
+
+        .tech-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+    </style>
+    
+</head>
+<body class="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-white shadow-lg border-b-4 border-indigo-500">
+        <div class="max-w-6xl mx-auto px-6 py-6">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+<!-- Left: System Info -->
+<div class="text-center md:text-left flex-1">
+    <h1 class="text-4xl font-bold text-gray-800 mb-2">📚 Absensi Online</h1>
+    <p class="text-gray-600 text-lg font-medium">Absensi XII TKJ 2</p>
+</div>
+
+                
+                <!-- Center: Official Logos -->
+<div class="flex items-center gap-6 flex-1 justify-center">
+    <!-- Gubernur -->
+    <div class="flex flex-col items-center">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+            <img src="gubernur.png" alt="Logo Dinas Pendidikan" class="w-20 h-20 object-cover rounded-full" onerror="this.style.display='none';">
+        </div>
+        <div class="text-xs text-gray-600 mt-2 text-center font-medium">
+            <div>DINAS</div>
+            <div>PENDIDIKAN</div>
+        </div>
+    </div>
+    
+    <!-- Dinas Pendidikan SUL-SEL (LOGO TENGAH BESAR) -->
+    <div class="flex flex-col items-center">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-xl overflow-hidden">
+            <img src="disdik.png" alt="Logo Dinas Pendidikan Sulsel" class="w-20 h-20 object-cover rounded-full" onerror="this.style.display='none';">
+        </div>
+        <div class="text-xs text-gray-600 mt-3 text-center font-medium">
+            <div>DINAS PENDIDIKAN</div>
+            <div>SULAWESI SELATAN</div>
+        </div>
+    </div>
+    
+    <!-- Logo Sekolah -->
+    <div class="flex flex-col items-center">
+        <div class="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg overflow-hidden">
+            <img src="logo skapat.png" alt="Logo SMK Negeri 4 Takalar" class="w-20 h-20 object-cover rounded-full" onerror="this.style.display='none';">
+        </div>
+        <div class="text-xs text-gray-600 mt-2 text-center font-medium">
+            <div>SMK NEGERI 4</div>
+            <div>TAKALAR</div>
+        </div>
+    </div>
+</div>
+
+                
+                <!-- Right: Date & Time -->
+                <div class="bg-indigo-50 rounded-xl p-4 text-center flex-1 max-w-xs">
+                    <div class="text-sm text-indigo-600 font-medium">Tanggal & Waktu</div>
+                    <div id="currentDateTime" class="text-base font-bold text-indigo-600"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- Main Content -->
+    <div class="max-w-6xl mx-auto px-6 py-4">
+
+        <!-- Control Panel -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+            <div class="flex flex-col gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                        <span class="text-2xl">✅</span>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-800">Panel Kontrol</h2>
+                        <p class="text-gray-600">Kelola kehadiran siswa dengan mudah</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button id="markAllPresent" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                        ✅ Hadir Semua
+                    </button>
+                    <button id="markAllSick" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                        🤒 Sakit Semua
+                    </button>
+                    <button id="markAllPermit" class="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                        📝 Izin Semua
+                    </button>
+                    <button id="markAllAbsent" class="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105">
+                        ❌ Alpha Semua
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-green-600" id="presentCount">0</div>
+                <div class="text-sm text-gray-600">Hadir</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-red-600" id="sickCount">0</div>
+                <div class="text-sm text-gray-600">Sakit</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-yellow-600" id="permitCount">0</div>
+                <div class="text-sm text-gray-600">Izin</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-lg border border-gray-100 text-center">
+                <div class="text-2xl font-bold text-gray-600" id="absentCount">0</div>
+                <div class="text-sm text-gray-600">Alpha</div>
+            </div>
+        </div>
+
+        <!-- Student List -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 mb-8 border border-gray-100">
+            <h3 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-3">
+                <span class="text-3xl">👨‍🎓</span>
+                Daftar Siswa (34 Siswa)
+            </h3>
+            <div id="studentList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Student cards will be generated here -->
+            </div>
+        </div>
+
+        <!-- Excel Management -->
+        <div class="text-center space-y-4 mb-8">
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <button id="saveAttendance" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 floating-animation">
+                    💾 Simpan ke Browser
+                </button>
+                <button id="submitAttendance" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 floating-animation">
+                    📤 Download Excel Absensi
+                </button>
+            </div>
+            
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center">
+                <button onclick="downloadAllData()" class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                    📊 Download Semua Data
+                </button>
+                <button onclick="downloadMergedData()" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                    🔗 Download Data Gabungan
+                </button>
+                <button onclick="clearAllData()" class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                    🗑️ Hapus Semua Data
+                </button>
+                <button onclick="refreshDataList()" class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+                    🔄 Refresh Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Storage Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-6 border border-gray-100">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="text-3xl">📊</span>
+                    Data Absensi Tersimpan
+                </h3>
+                <div class="flex items-center gap-4">
+                    <div class="bg-indigo-100 px-4 py-2 rounded-lg">
+                        <span class="text-indigo-600 font-semibold">Total: </span>
+                        <span id="totalRecords" class="text-indigo-800 font-bold">0</span>
+                        <span class="text-indigo-600"> record</span>
+                    </div>
+                    <div class="bg-blue-100 px-4 py-2 rounded-lg">
+                        <span class="text-blue-600 font-semibold">Terpilih: </span>
+                        <span id="selectedDataCount" class="text-blue-800 font-bold">0</span>
+                        <span class="text-blue-600"> data</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selection Controls -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 mb-6 border border-blue-200">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                            <span class="text-xl">☑️</span>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-blue-800">Pilih Data untuk Digabung</h4>
+                            <p class="text-sm text-blue-600">Centang data yang ingin digabungkan dengan data saat ini</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="selectAllStoredData()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            ☑️ Pilih Semua
+                        </button>
+                        <button onclick="deselectAllStoredData()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            ❌ Batal Pilih
+                        </button>
+                        <button onclick="mergeSelectedStoredData()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" id="mergeSelectedBtn" disabled>
+                            🔗 Gabung Terpilih
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data List Container -->
+            <div id="dataListContainer" class="space-y-4">
+                <!-- Data records will be displayed here -->
+                <div id="emptyState" class="text-center py-12">
+                    <div class="text-6xl mb-4">📋</div>
+                    <h4 class="text-xl font-semibold text-gray-600 mb-2">Belum Ada Data Absensi</h4>
+                    <p class="text-gray-500">Data akan tersimpan di LocalStorage browser Anda</p>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="paginationContainer" class="mt-6 flex justify-center items-center gap-2 hidden">
+                <button onclick="changePage(-1)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-gray-700 transition-colors">
+                    ← Sebelumnya
+                </button>
+                <span id="pageInfo" class="px-4 py-2 text-gray-600 font-medium">
+                    Halaman 1 dari 1
+                </span>
+                <button onclick="changePage(1)" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-gray-700 transition-colors">
+                    Selanjutnya →
+                </button>
+            </div>
+        </div>
+
+        <!-- Data Merging Section -->
+        <div class="mt-8 bg-gradient-to-r from-orange-100 to-red-100 rounded-xl p-6 border border-orange-200">
+            <h3 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-3">
+                <span class="text-3xl">🔗</span>
+                Penggabungan Data Absensi
+            </h3>
+            <p class="text-gray-600 mb-6">Gabungkan data absensi yang tersimpan dengan data saat ini</p>
+            
+            <!-- Merge Data List -->
+            <div class="bg-white rounded-lg p-4 mb-6 border border-orange-200">
+                <div class="flex items-center justify-between mb-4">
+                    <h4 class="font-bold text-orange-600 flex items-center gap-2">
+                        <span>📊</span>
+                        Data Tersedia untuk Penggabungan
+                    </h4>
+                    <div class="bg-orange-100 px-3 py-1 rounded-lg">
+                        <span class="text-orange-600 font-semibold">Terpilih: </span>
+                        <span id="selectedCount" class="text-orange-800 font-bold">0</span>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button onclick="selectAllData()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                        ☑️ Pilih Semua
+                    </button>
+                    <button onclick="deselectAllData()" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                        ❌ Batal Pilih
+                    </button>
+                    <button id="mergeButton" onclick="mergeSelectedData()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                        🔗 Gabung Terpilih
+                    </button>
+                </div>
+                
+                <div id="mergeDataList" class="space-y-3 max-h-64 overflow-y-auto">
+                    <!-- Data list will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="mt-8 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 border border-green-200">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3">
+                <span class="text-2xl">⚡</span>
+                Aksi Cepat
+            </h3>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="openManualEntry()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    ✏️ Input Data Manual
+                </button>
+                <button onclick="mergeLatestData()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    📅 Gabung Data Terbaru
+                </button>
+                <button onclick="mergeAllData()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                    📊 Gabung Semua Data
+                </button>
+            </div>
+        </div>
+
+        <!-- Merged Data Results Section -->
+        <div class="mt-8 bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-6 border border-green-200">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                <h3 class="text-2xl font-bold text-gray-800 flex items-center gap-3">
+                    <span class="text-3xl">🔗</span>
+                    Data Hasil Penggabungan
+                </h3>
+                <div class="bg-green-200 px-4 py-2 rounded-lg">
+                    <span class="text-green-600 font-semibold">Total Gabungan: </span>
+                    <span id="mergedRecordsCount" class="text-green-800 font-bold">0</span>
+                    <span class="text-green-600"> record</span>
+                </div>
+            </div>
+
+            <div id="mergedDataContainer" class="space-y-4">
+                <!-- Merged data records will be displayed here -->
+                <div id="mergedEmptyState" class="text-center py-12">
+                    <div class="text-6xl mb-4">🔗</div>
+                    <h4 class="text-xl font-semibold text-gray-600 mb-2">Belum Ada Data Gabungan</h4>
+                    <p class="text-gray-500">Data gabungan akan muncul setelah Anda melakukan penggabungan</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Message -->
+    <div id="successMessage" class="fixed top-4 right-4 bg-green-500 text-white px-6 py-4 rounded-xl shadow-xl hidden success-message">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">✅</span>
+            <div>
+                <div class="font-bold">Berhasil!</div>
+                <div class="text-sm">File Excel telah didownload</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data View Modal -->
+    <div id="dataModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 modal-backdrop">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-96 overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-gray-800">📊 Detail Data Absensi</h3>
+                        <button onclick="closeDataModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    </div>
+                </div>
+                <div id="dataContent" class="p-6 overflow-auto max-h-80">
+                    <!-- Data will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Entry Modal -->
+    <div id="manualEntryModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 modal-backdrop">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <h3 class="text-xl font-bold text-gray-800">✏️ Input Data Absensi Manual</h3>
+                        <button onclick="closeManualEntryModal()" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+                    </div>
+                </div>
+                <div class="p-6 overflow-auto max-h-[70vh]">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tanggal & Waktu:</label>
+                        <input type="datetime-local" id="modalDateTime" class="w-full p-3 border border-gray-300 rounded-lg">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Pilih Status Kehadiran untuk Setiap Siswa:</h4>
+                        <div id="manualStudentList" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Manual student cards will be generated here -->
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-end gap-4">
+                        <button onclick="closeManualEntryModal()" class="px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
+                            Batal
+                        </button>
+                        <button onclick="saveManualEntry()" class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors">
+                            💾 Simpan Data Manual
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data siswa
+        const students = [
+            "Agustina Novita", "Alun Pratama Putra", "Alwi Fahri", "April Yanti", "Dwi Aliyah Anggraeny", "Dirga Raditya Rusli", "Fahrisal Basri",
+            "Fajar Ramadan", "Muh. Taufiqurahman", "Haidir Ilham", "Muhammad Resky",
+            "Imam Malik", "Kasmiah", "Nur Ardiansyah", "Nur Jihan Fauzi Alfadila",
+            "Muhammad Hilmi Royhan", "Muhammad Rheyhan Ahmad", "Marsyah Hikmayani Nur", "Muhammad Abdillah",
+            "Nur Awaliyah Zahra", "Nur Insyani", "Nurannisa Amanda", "Nurul Fitri Ramadani",
+            "Nurul Khaerana", "Nur Afifah", "Nursal Sabila Febrianti", "Putri Reski Kirana",
+            "Rasya Aditiya", "Rahmat Hidayat", "Riska Tahir", "Saripuddin",
+            "Suci Ramadhani", "Zaskia Apriliana Noer"
+        ];
+
+        // Status kehadiran untuk setiap siswa
+        let attendanceData = {};
+        let allAttendanceRecords = [];
+        let mergedAttendanceRecords = [];
+        let currentPage = 1;
+        const recordsPerPage = 5;
+
+        // Inisialisasi data kehadiran
+        students.forEach(student => {
+            attendanceData[student] = 'alpha';
+        });
+
+        // Load existing data from localStorage
+        function loadExistingData() {
+            const stored = localStorage.getItem('attendanceRecords');
+            if (stored) {
+                allAttendanceRecords = JSON.parse(stored);
+            }
+            
+            const mergedStored = localStorage.getItem('mergedAttendanceRecords');
+            if (mergedStored) {
+                mergedAttendanceRecords = JSON.parse(mergedStored);
+            }
+            
+            console.log(`Loaded ${allAttendanceRecords.length} attendance records and ${mergedAttendanceRecords.length} merged records from localStorage`);
+        }
+
+        // Save data to localStorage
+        function saveToStorage() {
+            localStorage.setItem('attendanceRecords', JSON.stringify(allAttendanceRecords));
+            localStorage.setItem('mergedAttendanceRecords', JSON.stringify(mergedAttendanceRecords));
+            console.log('Data saved to localStorage');
+        }
+
+        // Update tanggal dan waktu
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Makassar'
+            };
+            document.getElementById('currentDateTime').textContent = now.toLocaleDateString('id-ID', options);
+        }
+
+        // Generate student cards
+        function generateStudentCards() {
+            const studentList = document.getElementById('studentList');
+            studentList.innerHTML = '';
+
+            students.forEach((student, index) => {
+                const card = document.createElement('div');
+                card.className = 'attendance-card bg-gray-50 rounded-xl p-4 border border-gray-200';
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-600">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-semibold text-gray-800">${student}</div>
+                            <div class="text-sm text-gray-500">Siswa Kelas</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="status-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-green-100 text-green-700 hover:bg-green-200" 
+                                onclick="setAttendance('${student}', 'hadir')" data-status="hadir">
+                            ✅ Hadir
+                        </button>
+                        <button class="status-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-red-100 text-red-700 hover:bg-red-200" 
+                                onclick="setAttendance('${student}', 'sakit')" data-status="sakit">
+                            🤒 Sakit
+                        </button>
+                        <button class="status-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-yellow-100 text-yellow-700 hover:bg-yellow-200" 
+                                onclick="setAttendance('${student}', 'izin')" data-status="izin">
+                            📝 Izin
+                        </button>
+                        <button class="status-btn px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200" 
+                                onclick="setAttendance('${student}', 'alpha')" data-status="alpha">
+                            ❌ Alpha
+                        </button>
+                    </div>
+                `;
+                
+                studentList.appendChild(card);
+            });
+            
+            updateStatistics();
+        }
+
+        // Set attendance status
+        function setAttendance(student, status) {
+            attendanceData[student] = status;
+            
+            const card = event.target.closest('.attendance-card');
+            const buttons = card.querySelectorAll('.status-btn');
+            
+            buttons.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-offset-2');
+                if (btn.dataset.status === 'hadir') {
+                    btn.classList.remove('bg-green-500', 'text-white');
+                    btn.classList.add('bg-green-100', 'text-green-700');
+                } else if (btn.dataset.status === 'sakit') {
+                    btn.classList.remove('bg-red-500', 'text-white');
+                    btn.classList.add('bg-red-100', 'text-red-700');
+                } else if (btn.dataset.status === 'izin') {
+                    btn.classList.remove('bg-yellow-500', 'text-white');
+                    btn.classList.add('bg-yellow-100', 'text-yellow-700');
+                } else if (btn.dataset.status === 'alpha') {
+                    btn.classList.remove('bg-gray-500', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                }
+            });
+            
+            const selectedBtn = card.querySelector(`[data-status="${status}"]`);
+            selectedBtn.classList.add('ring-2', 'ring-offset-2');
+            
+            if (status === 'hadir') {
+                selectedBtn.classList.remove('bg-green-100', 'text-green-700');
+                selectedBtn.classList.add('bg-green-500', 'text-white', 'ring-green-300');
+            } else if (status === 'sakit') {
+                selectedBtn.classList.remove('bg-red-100', 'text-red-700');
+                selectedBtn.classList.add('bg-red-500', 'text-white', 'ring-red-300');
+            } else if (status === 'izin') {
+                selectedBtn.classList.remove('bg-yellow-100', 'text-yellow-700');
+                selectedBtn.classList.add('bg-yellow-500', 'text-white', 'ring-yellow-300');
+            } else if (status === 'alpha') {
+                selectedBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                selectedBtn.classList.add('bg-gray-500', 'text-white', 'ring-gray-300');
+            }
+            
+            updateStatistics();
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const stats = {
+                hadir: 0,
+                sakit: 0,
+                izin: 0,
+                alpha: 0
+            };
+            
+            Object.values(attendanceData).forEach(status => {
+                stats[status]++;
+            });
+            
+            document.getElementById('presentCount').textContent = stats.hadir;
+            document.getElementById('sickCount').textContent = stats.sakit;
+            document.getElementById('permitCount').textContent = stats.izin;
+            document.getElementById('absentCount').textContent = stats.alpha;
+        }
+
+        // Function to mark all students with specific status
+        function markAllStudents(status) {
+            students.forEach(student => {
+                attendanceData[student] = status;
+            });
+            
+            const cards = document.querySelectorAll('.attendance-card');
+            cards.forEach(card => {
+                const buttons = card.querySelectorAll('.status-btn');
+                buttons.forEach(btn => {
+                    btn.classList.remove('ring-2', 'ring-offset-2', 'bg-green-500', 'bg-red-500', 'bg-yellow-500', 'bg-gray-500', 'text-white');
+                    
+                    if (btn.dataset.status === status) {
+                        if (status === 'hadir') {
+                            btn.classList.add('bg-green-500', 'text-white', 'ring-2', 'ring-offset-2', 'ring-green-300');
+                        } else if (status === 'sakit') {
+                            btn.classList.add('bg-red-500', 'text-white', 'ring-2', 'ring-offset-2', 'ring-red-300');
+                        } else if (status === 'izin') {
+                            btn.classList.add('bg-yellow-500', 'text-white', 'ring-2', 'ring-offset-2', 'ring-yellow-300');
+                        } else if (status === 'alpha') {
+                            btn.classList.add('bg-gray-500', 'text-white', 'ring-2', 'ring-offset-2', 'ring-gray-300');
+                        }
+                    } else {
+                        if (btn.dataset.status === 'hadir') {
+                            btn.classList.add('bg-green-100', 'text-green-700');
+                        } else if (btn.dataset.status === 'sakit') {
+                            btn.classList.add('bg-red-100', 'text-red-700');
+                        } else if (btn.dataset.status === 'izin') {
+                            btn.classList.add('bg-yellow-100', 'text-yellow-700');
+                        } else if (btn.dataset.status === 'alpha') {
+                            btn.classList.add('bg-gray-100', 'text-gray-700');
+                        }
+                    }
+                });
+            });
+            
+            updateStatistics();
+        }
+
+        // Mark all students present
+        document.getElementById('markAllPresent').addEventListener('click', function() {
+            markAllStudents('hadir');
+            
+            this.classList.add('pulse-animation');
+            setTimeout(() => {
+                this.classList.remove('pulse-animation');
+            }, 2000);
+        });
+
+        // Mark all students sick
+        document.getElementById('markAllSick').addEventListener('click', function() {
+            markAllStudents('sakit');
+            
+            this.classList.add('pulse-animation');
+            setTimeout(() => {
+                this.classList.remove('pulse-animation');
+            }, 2000);
+        });
+
+        // Mark all students permit
+        document.getElementById('markAllPermit').addEventListener('click', function() {
+            markAllStudents('izin');
+            
+            this.classList.add('pulse-animation');
+            setTimeout(() => {
+                this.classList.remove('pulse-animation');
+            }, 2000);
+        });
+
+        // Mark all students absent
+        document.getElementById('markAllAbsent').addEventListener('click', function() {
+            markAllStudents('alpha');
+            
+            this.classList.add('pulse-animation');
+            setTimeout(() => {
+                this.classList.remove('pulse-animation');
+            }, 2000);
+        });
+
+        // Save attendance to browser
+        function saveAttendanceToBrowser() {
+            try {
+                const now = new Date();
+                const dateTime = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
+                
+                // Create record
+                const record = {
+                    'Tanggal dan Waktu': dateTime,
+                    ...attendanceData
+                };
+                
+                // Validate record
+                if (!record['Tanggal dan Waktu']) {
+                    throw new Error('Tanggal dan waktu tidak valid');
+                }
+                
+                // Check if attendanceData has valid data
+                const hasValidData = students.some(student => attendanceData[student]);
+                if (!hasValidData) {
+                    throw new Error('Data kehadiran tidak valid');
+                }
+                
+                // Save to localStorage with error handling
+                allAttendanceRecords.push(record);
+                
+                try {
+                    localStorage.setItem('attendanceRecords', JSON.stringify(allAttendanceRecords));
+                    localStorage.setItem('mergedAttendanceRecords', JSON.stringify(mergedAttendanceRecords));
+                } catch (storageError) {
+                    // Remove the record if storage fails
+                    allAttendanceRecords.pop();
+                    throw new Error('Gagal menyimpan ke localStorage. Mungkin storage penuh.');
+                }
+                
+                displayDataList();
+                updateSourceDataSelect();
+                
+                return true;
+            } catch (error) {
+                console.error('Error in saveAttendanceToBrowser:', error);
+                throw error;
+            }
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            try {
+                const now = new Date();
+                const dateTime = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID');
+                
+                // Create record
+                const record = {
+                    'Tanggal dan Waktu': dateTime,
+                    ...attendanceData
+                };
+                
+                // Validate record
+                if (!record['Tanggal dan Waktu']) {
+                    throw new Error('Tanggal dan waktu tidak valid');
+                }
+                
+                // Check if attendanceData has valid data
+                const hasValidData = students.some(student => attendanceData[student]);
+                if (!hasValidData) {
+                    throw new Error('Data kehadiran tidak valid');
+                }
+                
+                // Save to localStorage with error handling
+                allAttendanceRecords.push(record);
+                
+                try {
+                    localStorage.setItem('attendanceRecords', JSON.stringify(allAttendanceRecords));
+                    localStorage.setItem('mergedAttendanceRecords', JSON.stringify(mergedAttendanceRecords));
+                } catch (storageError) {
+                    // Remove the record if storage fails
+                    allAttendanceRecords.pop();
+                    throw new Error('Gagal menyimpan ke localStorage. Mungkin storage penuh.');
+                }
+                
+                displayDataList();
+                updateSourceDataSelect();
+                
+                // Create workbook with error handling
+                if (!window.XLSX) {
+                    throw new Error('Library Excel tidak tersedia');
+                }
+                
+                // Create simple format: Data 1, Data 2, etc with Tanggal/Nama/Keterangan
+                const simpleData = [];
+                
+                allAttendanceRecords.forEach((record, dataIndex) => {
+                    const recordDate = record['Tanggal dan Waktu'];
+                    
+                    // Add header for each data set
+                    simpleData.push({
+                        'Tanggal': `=== DATA ${dataIndex + 1} ===`,
+                        'Nama': '',
+                        'Keterangan': ''
+                    });
+                    
+                    // Add each student's attendance for this data set
+                    students.forEach(student => {
+                        simpleData.push({
+                            'Tanggal': recordDate,
+                            'Nama': student,
+                            'Keterangan': record[student] || 'alpha'
+                        });
+                    });
+                    
+                    // Add empty row between data sets
+                    if (dataIndex < allAttendanceRecords.length - 1) {
+                        simpleData.push({
+                            'Tanggal': '',
+                            'Nama': '',
+                            'Keterangan': ''
+                        });
+                    }
+                });
+                
+                const ws = XLSX.utils.json_to_sheet(simpleData);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Absensi");
+                
+                // Download with error handling
+                const filename = `Absensi_Terhubung_${now.toISOString().split('T')[0]}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                
+                return true;
+            } catch (error) {
+                console.error('Error in exportToExcel:', error);
+                throw error;
+            }
+        }
+
+        // Download all data
+        function downloadAllData() {
+            if (allAttendanceRecords.length === 0) {
+                alert('Tidak ada data absensi yang tersimpan');
+                return;
+            }
+            
+            // Create simple format: Data 1, Data 2, etc with Tanggal/Nama/Keterangan
+            const simpleData = [];
+            
+            allAttendanceRecords.forEach((record, dataIndex) => {
+                const recordDate = record['Tanggal dan Waktu'];
+                
+                // Add header for each data set
+                simpleData.push({
+                    'Tanggal': `=== DATA ${dataIndex + 1} ===`,
+                    'Nama': '',
+                    'Keterangan': ''
+                });
+                
+                // Add each student's attendance for this data set
+                students.forEach(student => {
+                    simpleData.push({
+                        'Tanggal': recordDate,
+                        'Nama': student,
+                        'Keterangan': record[student] || 'alpha'
+                    });
+                });
+                
+                // Add empty row between data sets
+                if (dataIndex < allAttendanceRecords.length - 1) {
+                    simpleData.push({
+                        'Tanggal': '',
+                        'Nama': '',
+                        'Keterangan': ''
+                    });
+                }
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(simpleData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Semua Absensi");
+            
+            const filename = `Semua_Absensi_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Download merged data
+        function downloadMergedData() {
+            if (mergedAttendanceRecords.length === 0) {
+                alert('Tidak ada data gabungan yang tersimpan');
+                return;
+            }
+            
+            // Create simple format for merged data: Data 1, Data 2, etc with Tanggal/Nama/Keterangan
+            const simpleMergedData = [];
+            
+            mergedAttendanceRecords.forEach((record, dataIndex) => {
+                const recordDate = record['Tanggal dan Waktu'];
+                
+                // Add header for each data set
+                simpleMergedData.push({
+                    'Tanggal': `=== DATA GABUNGAN ${dataIndex + 1} ===`,
+                    'Nama': '',
+                    'Keterangan': ''
+                });
+                
+                // Add each student's attendance for this data set
+                students.forEach(student => {
+                    simpleMergedData.push({
+                        'Tanggal': recordDate,
+                        'Nama': student,
+                        'Keterangan': record[student] || 'alpha'
+                    });
+                });
+                
+                // Add empty row between data sets
+                if (dataIndex < mergedAttendanceRecords.length - 1) {
+                    simpleMergedData.push({
+                        'Tanggal': '',
+                        'Nama': '',
+                        'Keterangan': ''
+                    });
+                }
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(simpleMergedData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Data Gabungan");
+            
+            const filename = `Data_Gabungan_${new Date().toISOString().split('T')[0]}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Clear all data
+        function clearAllData() {
+            if (confirm('Apakah Anda yakin ingin menghapus semua data absensi yang tersimpan?')) {
+                allAttendanceRecords = [];
+                saveToStorage();
+                displayDataList();
+                alert('Semua data absensi telah dihapus');
+            }
+        }
+
+        // Display data list
+        function displayDataList() {
+            const container = document.getElementById('dataListContainer');
+            const emptyState = document.getElementById('emptyState');
+            const totalRecords = document.getElementById('totalRecords');
+            const paginationContainer = document.getElementById('paginationContainer');
+            
+            totalRecords.textContent = allAttendanceRecords.length;
+            
+            if (allAttendanceRecords.length === 0) {
+                emptyState.style.display = 'block';
+                paginationContainer.classList.add('hidden');
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            // Calculate pagination
+            const totalPages = Math.ceil(allAttendanceRecords.length / recordsPerPage);
+            const startIndex = (currentPage - 1) * recordsPerPage;
+            const endIndex = startIndex + recordsPerPage;
+            const currentRecords = allAttendanceRecords.slice(startIndex, endIndex);
+            
+            // Clear existing data cards
+            const existingCards = container.querySelectorAll('.data-record-card');
+            existingCards.forEach(card => card.remove());
+            
+            // Create data cards
+            currentRecords.forEach((record, index) => {
+                const actualIndex = startIndex + index;
+                const card = createDataCard(record, actualIndex);
+                container.appendChild(card);
+            });
+            
+            // Update pagination
+            if (totalPages > 1) {
+                paginationContainer.classList.remove('hidden');
+                document.getElementById('pageInfo').textContent = `Halaman ${currentPage} dari ${totalPages}`;
+            } else {
+                paginationContainer.classList.add('hidden');
+            }
+            
+            // Display merged data
+            displayMergedDataList();
+        }
+
+        // Display merged data list
+        function displayMergedDataList() {
+            const container = document.getElementById('mergedDataContainer');
+            const emptyState = document.getElementById('mergedEmptyState');
+            const totalMerged = document.getElementById('mergedRecordsCount');
+            
+            totalMerged.textContent = mergedAttendanceRecords.length;
+            
+            if (mergedAttendanceRecords.length === 0) {
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            // Clear existing merged cards
+            const existingCards = container.querySelectorAll('.merged-record-card');
+            existingCards.forEach(card => card.remove());
+            
+            // Create merged data cards (show last 3 records)
+            const recentMerged = mergedAttendanceRecords.slice(-3).reverse();
+            recentMerged.forEach((record, index) => {
+                const actualIndex = mergedAttendanceRecords.length - 1 - index;
+                const card = createMergedDataCard(record, actualIndex);
+                container.appendChild(card);
+            });
+        }
+
+        // Create data card
+        function createDataCard(record, index) {
+            const card = document.createElement('div');
+            card.className = 'data-record-card bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-6 border border-gray-200 hover:shadow-lg transition-all duration-300';
+            
+            // Calculate statistics
+            const stats = { hadir: 0, sakit: 0, izin: 0, alpha: 0 };
+            students.forEach(student => {
+                const status = record[student] || 'alpha';
+                stats[status]++;
+            });
+            
+            const totalStudents = students.length;
+            const attendancePercentage = Math.round((stats.hadir / totalStudents) * 100);
+            const actualIndex = (currentPage - 1) * recordsPerPage + index;
+            
+            card.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-center gap-4 flex-1">
+                        <!-- Selection Checkbox -->
+                        <div class="flex items-center">
+                            <input type="checkbox" id="dataCard_${actualIndex}" value="${actualIndex}" 
+                                   class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 data-selection-checkbox" 
+                                   onchange="updateSelectedDataCount()">
+                        </div>
+                        
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-600">
+                                    ${actualIndex + 1}
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-bold text-gray-800">📅 ${record['Tanggal dan Waktu']}</h4>
+                                    <p class="text-sm text-gray-600">Kehadiran: ${attendancePercentage}% (${stats.hadir}/${totalStudents} siswa)</p>
+                                </div>
+                            </div>
+                        
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="bg-green-100 rounded-lg p-3 text-center">
+                                    <div class="text-lg font-bold text-green-600">${stats.hadir}</div>
+                                    <div class="text-xs text-green-700">Hadir</div>
+                                </div>
+                                <div class="bg-red-100 rounded-lg p-3 text-center">
+                                    <div class="text-lg font-bold text-red-600">${stats.sakit}</div>
+                                    <div class="text-xs text-red-700">Sakit</div>
+                                </div>
+                                <div class="bg-yellow-100 rounded-lg p-3 text-center">
+                                    <div class="text-lg font-bold text-yellow-600">${stats.izin}</div>
+                                    <div class="text-xs text-yellow-700">Izin</div>
+                                </div>
+                                <div class="bg-gray-100 rounded-lg p-3 text-center">
+                                    <div class="text-lg font-bold text-gray-600">${stats.alpha}</div>
+                                    <div class="text-xs text-gray-700">Alpha</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-2">
+                        <button onclick="viewDetailRecord(${index})" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            👁️ Detail
+                        </button>
+                        <button onclick="downloadSingleRecord(${index})" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            📥 Download
+                        </button>
+                        <button onclick="deleteRecord(${index})" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            🗑️ Hapus
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Create merged data card
+        function createMergedDataCard(record, index) {
+            const card = document.createElement('div');
+            card.className = 'merged-record-card bg-gradient-to-r from-green-50 to-emerald-100 rounded-xl p-4 border-2 border-green-300 hover:shadow-lg transition-all duration-300';
+            
+            // Calculate statistics
+            const stats = { hadir: 0, sakit: 0, izin: 0, alpha: 0 };
+            students.forEach(student => {
+                const status = record[student] || 'alpha';
+                stats[status]++;
+            });
+            
+            const totalStudents = students.length;
+            const attendancePercentage = Math.round((stats.hadir / totalStudents) * 100);
+            
+            card.innerHTML = `
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 mb-3">
+                            <div class="w-10 h-10 bg-green-200 rounded-full flex items-center justify-center font-bold text-green-700">
+                                🔗
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    📅 ${record['Tanggal dan Waktu']}
+                                    <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">GABUNGAN</span>
+                                </h4>
+                                <p class="text-sm text-gray-600">Kehadiran: ${attendancePercentage}% (${stats.hadir}/${totalStudents} siswa)</p>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                            <div class="bg-green-200 rounded-lg p-2 text-center">
+                                <div class="text-sm font-bold text-green-700">${stats.hadir}</div>
+                                <div class="text-xs text-green-600">Hadir</div>
+                            </div>
+                            <div class="bg-red-200 rounded-lg p-2 text-center">
+                                <div class="text-sm font-bold text-red-700">${stats.sakit}</div>
+                                <div class="text-xs text-red-600">Sakit</div>
+                            </div>
+                            <div class="bg-yellow-200 rounded-lg p-2 text-center">
+                                <div class="text-sm font-bold text-yellow-700">${stats.izin}</div>
+                                <div class="text-xs text-yellow-600">Izin</div>
+                            </div>
+                            <div class="bg-gray-200 rounded-lg p-2 text-center">
+                                <div class="text-sm font-bold text-gray-700">${stats.alpha}</div>
+                                <div class="text-xs text-gray-600">Alpha</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-2">
+                        <button onclick="viewMergedDetailRecord(${index})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                            👁️ Detail
+                        </button>
+                        <button onclick="downloadMergedRecord(${index})" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-medium transition-colors">
+                            📥 Download
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+
+        // Change page
+        function changePage(direction) {
+            const totalPages = Math.ceil(allAttendanceRecords.length / recordsPerPage);
+            const newPage = currentPage + direction;
+            
+            if (newPage >= 1 && newPage <= totalPages) {
+                currentPage = newPage;
+                displayDataList();
+            }
+        }
+
+        // Refresh data list
+        function refreshDataList() {
+            loadExistingData();
+            displayDataList();
+        }
+
+        // View detail record
+        function viewDetailRecord(index) {
+            const actualIndex = (currentPage - 1) * recordsPerPage + index;
+            const record = allAttendanceRecords[actualIndex];
+            
+            let detailHtml = `
+                <div class="mb-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2">📅 ${record['Tanggal dan Waktu']}</h4>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto">
+            `;
+            
+            students.forEach((student, idx) => {
+                const status = record[student] || 'alpha';
+                let statusColor = 'bg-gray-100 text-gray-700';
+                let statusIcon = '❌';
+                
+                if (status === 'hadir') {
+                    statusColor = 'bg-green-100 text-green-700';
+                    statusIcon = '✅';
+                } else if (status === 'sakit') {
+                    statusColor = 'bg-red-100 text-red-700';
+                    statusIcon = '🤒';
+                } else if (status === 'izin') {
+                    statusColor = 'bg-yellow-100 text-yellow-700';
+                    statusIcon = '📝';
+                }
+                
+                detailHtml += `
+                    <div class="flex items-center justify-between p-3 ${statusColor} rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-indigo-100 rounded-full flex items-center justify-center text-xs font-bold text-indigo-600">
+                                ${idx + 1}
+                            </span>
+                            <span class="font-medium">${student}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span>${statusIcon}</span>
+                            <span class="text-sm font-semibold capitalize">${status}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            detailHtml += '</div>';
+            
+            document.getElementById('dataContent').innerHTML = detailHtml;
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+
+        // Download single record
+        function downloadSingleRecord(index) {
+            const actualIndex = (currentPage - 1) * recordsPerPage + index;
+            const record = allAttendanceRecords[actualIndex];
+            
+            // Convert single record to simple format: Tanggal/Nama/Keterangan
+            const simpleData = [];
+            const recordDate = record['Tanggal dan Waktu'];
+            
+            // Add header
+            simpleData.push({
+                'Tanggal': `=== DATA 1 ===`,
+                'Nama': '',
+                'Keterangan': ''
+            });
+            
+            students.forEach(student => {
+                simpleData.push({
+                    'Tanggal': recordDate,
+                    'Nama': student,
+                    'Keterangan': record[student] || 'alpha'
+                });
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(simpleData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Absensi");
+            
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `Absensi_${date}_${actualIndex + 1}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Delete record
+        function deleteRecord(index) {
+            const actualIndex = (currentPage - 1) * recordsPerPage + index;
+            const record = allAttendanceRecords[actualIndex];
+            
+            if (confirm(`Apakah Anda yakin ingin menghapus data absensi tanggal ${record['Tanggal dan Waktu']}?`)) {
+                allAttendanceRecords.splice(actualIndex, 1);
+                saveToStorage();
+                
+                // Adjust current page if necessary
+                const totalPages = Math.ceil(allAttendanceRecords.length / recordsPerPage);
+                if (currentPage > totalPages && totalPages > 0) {
+                    currentPage = totalPages;
+                }
+                
+                displayDataList();
+            }
+        }
+
+        // Close modal
+        function closeDataModal() {
+            document.getElementById('dataModal').classList.add('hidden');
+        }
+
+        // Manual entry data
+        let manualAttendanceData = {};
+
+        // Open manual entry modal
+        function openManualEntry() {
+            // Set current date and time
+            const now = new Date();
+            const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+            document.getElementById('modalDateTime').value = localDateTime;
+            
+            // Reset manual attendance data
+            students.forEach(student => {
+                manualAttendanceData[student] = 'alpha';
+            });
+            
+            generateManualStudentCards();
+            document.getElementById('manualEntryModal').classList.remove('hidden');
+        }
+
+        // Generate manual student cards
+        function generateManualStudentCards() {
+            const manualStudentList = document.getElementById('manualStudentList');
+            manualStudentList.innerHTML = '';
+
+            students.forEach((student, index) => {
+                const card = document.createElement('div');
+                card.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200';
+                
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center font-bold text-indigo-600 text-sm">
+                            ${index + 1}
+                        </div>
+                        <div class="flex-1">
+                            <div class="font-medium text-gray-800 text-sm">${student}</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button class="manual-status-btn px-2 py-1 rounded text-xs font-medium transition-all duration-200 bg-green-100 text-green-700 hover:bg-green-200" 
+                                onclick="setManualAttendance('${student}', 'hadir')" data-status="hadir">
+                            ✅ Hadir
+                        </button>
+                        <button class="manual-status-btn px-2 py-1 rounded text-xs font-medium transition-all duration-200 bg-red-100 text-red-700 hover:bg-red-200" 
+                                onclick="setManualAttendance('${student}', 'sakit')" data-status="sakit">
+                            🤒 Sakit
+                        </button>
+                        <button class="manual-status-btn px-2 py-1 rounded text-xs font-medium transition-all duration-200 bg-yellow-100 text-yellow-700 hover:bg-yellow-200" 
+                                onclick="setManualAttendance('${student}', 'izin')" data-status="izin">
+                            📝 Izin
+                        </button>
+                        <button class="manual-status-btn px-2 py-1 rounded text-xs font-medium transition-all duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200" 
+                                onclick="setManualAttendance('${student}', 'alpha')" data-status="alpha">
+                            ❌ Alpha
+                        </button>
+                    </div>
+                `;
+                
+                manualStudentList.appendChild(card);
+            });
+        }
+
+        // Set manual attendance
+        function setManualAttendance(student, status) {
+            manualAttendanceData[student] = status;
+            
+            const card = event.target.closest('.bg-gray-50');
+            const buttons = card.querySelectorAll('.manual-status-btn');
+            
+            buttons.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-offset-1');
+                if (btn.dataset.status === 'hadir') {
+                    btn.classList.remove('bg-green-500', 'text-white');
+                    btn.classList.add('bg-green-100', 'text-green-700');
+                } else if (btn.dataset.status === 'sakit') {
+                    btn.classList.remove('bg-red-500', 'text-white');
+                    btn.classList.add('bg-red-100', 'text-red-700');
+                } else if (btn.dataset.status === 'izin') {
+                    btn.classList.remove('bg-yellow-500', 'text-white');
+                    btn.classList.add('bg-yellow-100', 'text-yellow-700');
+                } else if (btn.dataset.status === 'alpha') {
+                    btn.classList.remove('bg-gray-500', 'text-white');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                }
+            });
+            
+            const selectedBtn = card.querySelector(`[data-status="${status}"]`);
+            selectedBtn.classList.add('ring-2', 'ring-offset-1');
+            
+            if (status === 'hadir') {
+                selectedBtn.classList.remove('bg-green-100', 'text-green-700');
+                selectedBtn.classList.add('bg-green-500', 'text-white', 'ring-green-300');
+            } else if (status === 'sakit') {
+                selectedBtn.classList.remove('bg-red-100', 'text-red-700');
+                selectedBtn.classList.add('bg-red-500', 'text-white', 'ring-red-300');
+            } else if (status === 'izin') {
+                selectedBtn.classList.remove('bg-yellow-100', 'text-yellow-700');
+                selectedBtn.classList.add('bg-yellow-500', 'text-white', 'ring-yellow-300');
+            } else if (status === 'alpha') {
+                selectedBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                selectedBtn.classList.add('bg-gray-500', 'text-white', 'ring-gray-300');
+            }
+        }
+
+        // Save manual entry
+        function saveManualEntry() {
+            const dateTimeInput = document.getElementById('modalDateTime').value;
+            if (!dateTimeInput) {
+                alert('Silakan pilih tanggal dan waktu terlebih dahulu');
+                return;
+            }
+            
+            const dateTime = new Date(dateTimeInput).toLocaleString('id-ID');
+            
+            // Create record
+            const record = {
+                'Tanggal dan Waktu': dateTime + ' (Manual)',
+                ...manualAttendanceData
+            };
+            
+            // Add new record
+            allAttendanceRecords.push(record);
+            saveToStorage();
+            displayDataList();
+            closeManualEntryModal();
+            alert('Data manual berhasil disimpan!');
+        }
+
+        // View merged detail record
+        function viewMergedDetailRecord(index) {
+            const record = mergedAttendanceRecords[index];
+            
+            let detailHtml = `
+                <div class="mb-4">
+                    <h4 class="text-lg font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        🔗 ${record['Tanggal dan Waktu']}
+                        <span class="bg-green-500 text-white text-xs px-2 py-1 rounded-full">GABUNGAN</span>
+                    </h4>
+                    ${record['Source'] ? `<p class="text-sm text-gray-600 mb-2">${record['Source']}</p>` : ''}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-64 overflow-y-auto">
+            `;
+            
+            students.forEach((student, idx) => {
+                const status = record[student] || 'alpha';
+                let statusColor = 'bg-gray-100 text-gray-700';
+                let statusIcon = '❌';
+                
+                if (status === 'hadir') {
+                    statusColor = 'bg-green-100 text-green-700';
+                    statusIcon = '✅';
+                } else if (status === 'sakit') {
+                    statusColor = 'bg-red-100 text-red-700';
+                    statusIcon = '🤒';
+                } else if (status === 'izin') {
+                    statusColor = 'bg-yellow-100 text-yellow-700';
+                    statusIcon = '📝';
+                }
+                
+                detailHtml += `
+                    <div class="flex items-center justify-between p-3 ${statusColor} rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <span class="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center text-xs font-bold text-green-700">
+                                ${idx + 1}
+                            </span>
+                            <span class="font-medium">${student}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span>${statusIcon}</span>
+                            <span class="text-sm font-semibold capitalize">${status}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            detailHtml += '</div>';
+            
+            document.getElementById('dataContent').innerHTML = detailHtml;
+            document.getElementById('dataModal').classList.remove('hidden');
+        }
+
+        // Download merged record
+        function downloadMergedRecord(index) {
+            const record = mergedAttendanceRecords[index];
+            
+            // Convert merged record to simple format: Tanggal/Nama/Keterangan
+            const simpleData = [];
+            const recordDate = record['Tanggal dan Waktu'];
+            
+            // Add header
+            simpleData.push({
+                'Tanggal': `=== DATA GABUNGAN 1 ===`,
+                'Nama': '',
+                'Keterangan': ''
+            });
+            
+            students.forEach(student => {
+                simpleData.push({
+                    'Tanggal': recordDate,
+                    'Nama': student,
+                    'Keterangan': record[student] || 'alpha'
+                });
+            });
+            
+            const ws = XLSX.utils.json_to_sheet(simpleData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Absensi Gabungan");
+            
+            const date = new Date().toISOString().split('T')[0];
+            const filename = `Absensi_Gabungan_${date}_${index + 1}.xlsx`;
+            XLSX.writeFile(wb, filename);
+        }
+
+        // Close manual entry modal
+        function closeManualEntryModal() {
+            document.getElementById('manualEntryModal').classList.add('hidden');
+        }
+
+        // Update source data select options
+        function updateSourceDataSelect() {
+            // Update merge data list
+            updateMergeDataList();
+        }
+
+        // Update merge data list with checkboxes
+        function updateMergeDataList() {
+            const container = document.getElementById('mergeDataList');
+            if (!container) return;
+            
+            container.innerHTML = '';
+            
+            if (allAttendanceRecords.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-2">📋</div>
+                        <p>Belum ada data absensi yang tersimpan</p>
+                        <p class="text-sm">Simpan data absensi terlebih dahulu untuk dapat menggabungkannya</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            allAttendanceRecords.forEach((record, index) => {
+                const stats = getAttendanceStats(record);
+                const attendancePercentage = Math.round((stats.hadir / students.length) * 100);
+                
+                const item = document.createElement('div');
+                item.className = 'flex items-center gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors';
+                
+                item.innerHTML = `
+                    <input type="checkbox" id="data_${index}" value="${index}" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" onchange="updateSelectedCount()">
+                    <label for="data_${index}" class="flex-1 cursor-pointer">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-800">${record['Tanggal dan Waktu']}</div>
+                                <div class="text-sm text-gray-600">Kehadiran: ${attendancePercentage}% (${stats.hadir}/${students.length} siswa)</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-medium">${stats.hadir} Hadir</span>
+                                <span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs font-medium">${stats.sakit} Sakit</span>
+                                <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-medium">${stats.izin} Izin</span>
+                                <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">${stats.alpha} Alpha</span>
+                            </div>
+                        </div>
+                    </label>
+                `;
+                
+                container.appendChild(item);
+            });
+            
+            updateSelectedCount();
+        }
+
+        // Update selected count
+        function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('#mergeDataList input[type="checkbox"]');
+            const selectedCheckboxes = document.querySelectorAll('#mergeDataList input[type="checkbox"]:checked');
+            const selectedCount = selectedCheckboxes.length;
+            
+            document.getElementById('selectedCount').textContent = selectedCount;
+            
+            const mergeButton = document.getElementById('mergeButton');
+            if (mergeButton) {
+                mergeButton.disabled = selectedCount === 0;
+            }
+        }
+
+        // Select all data
+        function selectAllData() {
+            const checkboxes = document.querySelectorAll('#mergeDataList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedCount();
+        }
+
+        // Deselect all data
+        function deselectAllData() {
+            const checkboxes = document.querySelectorAll('#mergeDataList input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedCount();
+        }
+
+        // Simple merge strategy - current data takes priority
+        function applyMergeStrategy(currentStatus, sourceStatus) {
+            return currentStatus !== 'alpha' ? currentStatus : sourceStatus;
+        }
+
+        // Merge latest data
+        function mergeLatestData() {
+            if (allAttendanceRecords.length === 0) {
+                alert('Tidak ada data yang tersedia untuk digabung');
+                return;
+            }
+            
+            const latestRecord = allAttendanceRecords[allAttendanceRecords.length - 1];
+            
+            const now = new Date();
+            const dateTime = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID') + ' (Gabungan Terbaru)';
+            
+            let mergedRecord = {
+                'Tanggal dan Waktu': dateTime,
+                'Source': `Digabung dari data terbaru: ${latestRecord['Tanggal dan Waktu']}`
+            };
+            
+            students.forEach(student => {
+                const currentStatus = attendanceData[student] || 'alpha';
+                const sourceStatus = latestRecord[student] || 'alpha';
+                mergedRecord[student] = applyMergeStrategy(currentStatus, sourceStatus);
+            });
+            
+            mergedAttendanceRecords.push(mergedRecord);
+            saveToStorage();
+            displayDataList();
+            
+            alert('Data terbaru berhasil digabung!');
+        }
+
+        // Merge all data
+        function mergeAllData() {
+            if (allAttendanceRecords.length === 0) {
+                alert('Tidak ada data yang tersedia untuk digabung');
+                return;
+            }
+            
+            if (!confirm(`Apakah Anda yakin ingin menggabungkan semua ${allAttendanceRecords.length} data absensi?`)) {
+                return;
+            }
+            
+            allAttendanceRecords.forEach((sourceRecord, index) => {
+                const now = new Date();
+                const dateTime = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID') + ` (Gabungan Semua ${index + 1})`;
+                
+                let mergedRecord = {
+                    'Tanggal dan Waktu': dateTime,
+                    'Source': `Digabung dari: ${sourceRecord['Tanggal dan Waktu']}`
+                };
+                
+                students.forEach(student => {
+                    const currentStatus = attendanceData[student] || 'alpha';
+                    const sourceStatus = sourceRecord[student] || 'alpha';
+                    mergedRecord[student] = applyMergeStrategy(currentStatus, sourceStatus);
+                });
+                
+                mergedAttendanceRecords.push(mergedRecord);
+            });
+            
+            saveToStorage();
+            displayDataList();
+            
+            alert(`Semua ${allAttendanceRecords.length} data berhasil digabung!`);
+        }
+
+        // Get attendance statistics from record
+        function getAttendanceStats(record) {
+            const stats = { hadir: 0, sakit: 0, izin: 0, alpha: 0 };
+            students.forEach(student => {
+                const status = record[student] || 'alpha';
+                stats[status]++;
+            });
+            return stats;
+        }
+
+        // Merge selected data
+        function mergeSelectedData() {
+            const selectedCheckboxes = document.querySelectorAll('#mergeDataList input[type="checkbox"]:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('Silakan pilih data yang akan digabung terlebih dahulu');
+                return;
+            }
+            
+            let mergedCount = 0;
+            
+            selectedCheckboxes.forEach(checkbox => {
+                const sourceIndex = parseInt(checkbox.value);
+                const sourceRecord = allAttendanceRecords[sourceIndex];
+                
+                const now = new Date();
+                const dateTime = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID') + ` (Gabungan ${mergedCount + 1})`;
+                
+                let mergedRecord = {
+                    'Tanggal dan Waktu': dateTime,
+                    'Source': `Digabung dari: ${sourceRecord['Tanggal dan Waktu']}`
+                };
+                
+                students.forEach(student => {
+                    const currentStatus = attendanceData[student] || 'alpha';
+                    const sourceStatus = sourceRecord[student] || 'alpha';
+                    mergedRecord[student] = applyMergeStrategy(currentStatus, sourceStatus);
+                });
+                
+                mergedAttendanceRecords.push(mergedRecord);
+                mergedCount++;
+            });
+            
+            saveToStorage();
+            displayDataList();
+            updateSourceDataSelect();
+            
+            // Deselect all checkboxes after merge
+            deselectAllData();
+            
+            alert(`${mergedCount} data berhasil digabung!`);
+        }
+
+
+
+        // Save attendance to browser
+        document.getElementById('saveAttendance').addEventListener('click', function() {
+            this.innerHTML = '⏳ Menyimpan...';
+            this.disabled = true;
+            
+            try {
+                saveAttendanceToBrowser();
+                
+                // Show success message
+                const successMsg = document.getElementById('successMessage');
+                const successContent = successMsg.querySelector('div:last-child');
+                successContent.innerHTML = `
+                    <div class="font-bold">Berhasil!</div>
+                    <div class="text-sm">Data absensi tersimpan di browser</div>
+                `;
+                successMsg.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    successMsg.classList.add('hidden');
+                }, 3000);
+            } catch (error) {
+                console.error('Error:', error);
+                let errorMessage = 'Terjadi kesalahan saat menyimpan data.';
+                
+                if (error.message.includes('localStorage')) {
+                    errorMessage = 'Storage browser penuh. Silakan hapus beberapa data lama.';
+                } else if (error.message.includes('tidak valid')) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = 'Terjadi kesalahan tidak terduga. Silakan refresh halaman dan coba lagi.';
+                }
+                
+                alert(errorMessage);
+            } finally {
+                this.innerHTML = '💾 Simpan ke Browser';
+                this.disabled = false;
+            }
+        });
+
+        // Submit attendance
+        document.getElementById('submitAttendance').addEventListener('click', function() {
+            this.innerHTML = '⏳ Membuat Excel...';
+            this.disabled = true;
+            
+            try {
+                exportToExcel();
+                
+                const successMsg = document.getElementById('successMessage');
+                const successContent = successMsg.querySelector('div:last-child');
+                successContent.innerHTML = `
+                    <div class="font-bold">Berhasil!</div>
+                    <div class="text-sm">File Excel telah didownload</div>
+                `;
+                successMsg.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    successMsg.classList.add('hidden');
+                }, 5000);
+            } catch (error) {
+                console.error('Error:', error);
+                let errorMessage = 'Terjadi kesalahan saat membuat Excel.';
+                
+                if (error.message.includes('Library Excel')) {
+                    errorMessage = 'Library Excel tidak dapat dimuat. Silakan refresh halaman.';
+                } else if (error.message.includes('localStorage')) {
+                    errorMessage = 'Storage browser penuh. Silakan hapus beberapa data lama.';
+                } else if (error.message.includes('tidak valid')) {
+                    errorMessage = error.message;
+                } else {
+                    errorMessage = 'Terjadi kesalahan saat membuat file Excel. Silakan coba lagi.';
+                }
+                
+                alert(errorMessage);
+            } finally {
+                this.innerHTML = '📤 Download Excel Absensi';
+                this.disabled = false;
+            }
+        });
+
+        // Update selected data count
+        function updateSelectedDataCount() {
+            const checkboxes = document.querySelectorAll('.data-selection-checkbox');
+            const selectedCheckboxes = document.querySelectorAll('.data-selection-checkbox:checked');
+            const selectedCount = selectedCheckboxes.length;
+            
+            document.getElementById('selectedDataCount').textContent = selectedCount;
+            
+            const mergeBtn = document.getElementById('mergeSelectedBtn');
+            if (mergeBtn) {
+                mergeBtn.disabled = selectedCount === 0;
+            }
+        }
+
+        // Select all stored data
+        function selectAllStoredData() {
+            const checkboxes = document.querySelectorAll('.data-selection-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = true;
+            });
+            updateSelectedDataCount();
+        }
+
+        // Deselect all stored data
+        function deselectAllStoredData() {
+            const checkboxes = document.querySelectorAll('.data-selection-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            updateSelectedDataCount();
+        }
+
+        // Merge selected stored data
+        function mergeSelectedStoredData() {
+            const selectedCheckboxes = document.querySelectorAll('.data-selection-checkbox:checked');
+            
+            if (selectedCheckboxes.length === 0) {
+                alert('Silakan pilih data yang akan digabung terlebih dahulu');
+                return;
+            }
+            
+            let mergedCount = 0;
+            
+            selectedCheckboxes.forEach(checkbox => {
+                const sourceIndex = parseInt(checkbox.value);
+                const sourceRecord = allAttendanceRecords[sourceIndex];
+                
+                const now = new Date();
+                const dateTime = now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID') + ` (Gabungan Data ${mergedCount + 1})`;
+                
+                let mergedRecord = {
+                    'Tanggal dan Waktu': dateTime,
+                    'Source': `Digabung dari: ${sourceRecord['Tanggal dan Waktu']}`
+                };
+                
+                students.forEach(student => {
+                    const currentStatus = attendanceData[student] || 'alpha';
+                    const sourceStatus = sourceRecord[student] || 'alpha';
+                    mergedRecord[student] = applyMergeStrategy(currentStatus, sourceStatus);
+                });
+                
+                mergedAttendanceRecords.push(mergedRecord);
+                mergedCount++;
+            });
+            
+            saveToStorage();
+            displayDataList();
+            updateSourceDataSelect();
+            
+            // Deselect all checkboxes after merge
+            deselectAllStoredData();
+            
+            alert(`${mergedCount} data berhasil digabung!`);
+        }
+
+        // Initialize
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+        generateStudentCards();
+        loadExistingData();
+        displayDataList();
+        updateSourceDataSelect();
+        
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9815a822a664b4d0',t:'MTc1ODI0ODk4MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
